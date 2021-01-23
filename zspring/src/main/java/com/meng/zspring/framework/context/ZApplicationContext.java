@@ -13,6 +13,8 @@ import com.meng.zspring.framework.beans.suport.ZDefaultListableBeanFactory;
 import java.lang.reflect.Field;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
@@ -117,7 +119,7 @@ public class ZApplicationContext extends ZDefaultListableBeanFactory implements 
 
         postProcessor.postProcessAfterInitialization(instance,beanName);
 
-//        //3、注入
+        //3、注入
         populateBean(beanName,new ZBeanDefinition(),beanWrapper);
 
 
@@ -186,5 +188,12 @@ public class ZApplicationContext extends ZDefaultListableBeanFactory implements 
         }
 
         return instance;
+    }
+    public Set<String> getBeanDefinitionNames(){
+        return beanDefinitionMap.keySet();
+    }
+
+    public Properties getConfig() {
+        return reader.getConfig();
     }
 }

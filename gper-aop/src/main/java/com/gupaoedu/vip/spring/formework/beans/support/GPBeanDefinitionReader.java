@@ -1,6 +1,6 @@
-package com.meng.zspring.framework.beans.suport;
+package com.gupaoedu.vip.spring.formework.beans.support;
 
-import com.meng.zspring.framework.beans.config.ZBeanDefinition;
+import com.gupaoedu.vip.spring.formework.beans.config.GPBeanDefinition;
 
 import java.io.File;
 import java.io.IOException;
@@ -8,16 +8,13 @@ import java.io.InputStream;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 
 /**
- * 加载BeanDefinition信息
- *
- * @author ZuoHao
- * @date 2021/1/23
+ * Created by Tom.
  */
-public class ZBeanDefinitionReader {
+public class GPBeanDefinitionReader {
+
     private List<String> registyBeanClasses = new ArrayList<String>();
 
     private Properties config = new Properties();
@@ -25,9 +22,7 @@ public class ZBeanDefinitionReader {
     //固定配置文件中的key，相对于xml的规范
     private final String SCAN_PACKAGE = "scanPackage";
 
-
-    public ZBeanDefinitionReader(String[] locations) {
-
+    public GPBeanDefinitionReader(String... locations){
         //通过URL定位找到其所对应的文件，然后转换为文件流
         InputStream is = this.getClass().getClassLoader().getResourceAsStream(locations[0].replace("classpath:",""));
         try {
@@ -43,20 +38,17 @@ public class ZBeanDefinitionReader {
                 }
             }
         }
-
+        
         doScanner(config.getProperty(SCAN_PACKAGE));
-
-
-
     }
 
-    /**
-     * 扫描类
-     */
     private void doScanner(String scanPackage) {
+        //转换为文件路径，实际上就是把.替换为/就OK了
+        //this.getClass()
+//        this.getClass().getClassLoader()
         URL url = this.getClass().getResource("/" + scanPackage.replaceAll("\\.","/"));
         File classPath = new File(url.getFile());
-        for (File file : Objects.requireNonNull(classPath.listFiles())) {
+        for (File file : classPath.listFiles()) {
             if(file.isDirectory()){
                 doScanner(scanPackage + "." + file.getName());
             }else{
@@ -67,9 +59,13 @@ public class ZBeanDefinitionReader {
         }
     }
 
-    public List<ZBeanDefinition> loadBeanDefinitions() {
-        //所有的类信息
-        List<ZBeanDefinition> result = new ArrayList<ZBeanDefinition>();
+    public Properties getConfig(){
+        return this.config;
+    }
+
+    //把配置文件中扫描到的所有的配置信息转换为GPBeanDefinition对象，以便于之后IOC操作方便
+    public List<GPBeanDefinition> loadBeanDefinitions(){
+        List<GPBeanDefinition> result = new ArrayList<GPBeanDefinition>();
         try {
             for (String className : registyBeanClasses) {
                 Class<?> beanClass = Class.forName(className);
@@ -82,6 +78,7 @@ public class ZBeanDefinitionReader {
                 //2、自定义名字
                 //3、接口注入
                 result.add(doCreateBeanDefinition(toLowerFirstCase(beanClass.getSimpleName()),beanClass.getName()));
+//                result.add(doCreateBeanDefinition(beanClass.getName(),beanClass.getName()));
 
                 Class<?> [] interfaces = beanClass.getInterfaces();
                 for (Class<?> i : interfaces) {
@@ -98,9 +95,10 @@ public class ZBeanDefinitionReader {
         return result;
     }
 
+
     //把每一个配信息解析成一个BeanDefinition
-    private ZBeanDefinition doCreateBeanDefinition(String factoryBeanName,String beanClassName){
-        ZBeanDefinition beanDefinition = new ZBeanDefinition();
+    private GPBeanDefinition doCreateBeanDefinition(String factoryBeanName,String beanClassName){
+        GPBeanDefinition beanDefinition = new GPBeanDefinition();
         beanDefinition.setBeanClassName(beanClassName);
         beanDefinition.setFactoryBeanName(factoryBeanName);
         return beanDefinition;
@@ -120,9 +118,5 @@ public class ZBeanDefinitionReader {
         //在Java中，对char做算学运算，实际上就是对ASCII码做算学运算
         chars[0] += 32;
         return String.valueOf(chars);
-    }
-
-    public Properties getConfig() {
-        return config;
     }
 }
