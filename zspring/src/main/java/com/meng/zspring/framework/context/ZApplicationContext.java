@@ -3,6 +3,11 @@ package com.meng.zspring.framework.context;
 import com.meng.zspring.framework.annotation.ZAutowired;
 import com.meng.zspring.framework.annotation.ZController;
 import com.meng.zspring.framework.annotation.ZService;
+import com.meng.zspring.framework.aop.ZAopProxy;
+import com.meng.zspring.framework.aop.ZCglibAopProxy;
+import com.meng.zspring.framework.aop.ZJdkDynamicAopProxy;
+import com.meng.zspring.framework.aop.config.ZAopConfig;
+import com.meng.zspring.framework.aop.support.ZAdvisedSupport;
 import com.meng.zspring.framework.beans.ZBeanFactory;
 import com.meng.zspring.framework.beans.ZBeanWrapper;
 import com.meng.zspring.framework.beans.config.ZBeanDefinition;
@@ -28,11 +33,11 @@ public class ZApplicationContext extends ZDefaultListableBeanFactory implements 
     /**
      * 单例的IOC容器缓存
      */
-    private Map<String,Object> singletonObjects = new ConcurrentHashMap<String, Object>();
+    private Map<String,Object> factoryBeanObjectCache = new ConcurrentHashMap<String, Object>();
     /**
      * 通用的IOC容器
      */
-    private Map<String, ZBeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<String, ZBeanWrapper>();
+    private Map<String,ZBeanWrapper> factoryBeanInstanceCache = new ConcurrentHashMap<String, ZBeanWrapper>();
 
     public ZApplicationContext(String... configLocations) {
         this.configLocations = configLocations;
@@ -175,13 +180,24 @@ public class ZApplicationContext extends ZDefaultListableBeanFactory implements 
         try {
 //            gpBeanDefinition.getFactoryBeanName()
             //假设默认就是单例,细节暂且不考虑，先把主线拉通
-            if(this.singletonObjects.containsKey(className)){
-                instance = this.singletonObjects.get(className);
+            if(this.factoryBeanObjectCache.containsKey(className)){
+                instance = this.factoryBeanObjectCache.get(className);
             }else {
                 Class<?> clazz = Class.forName(className);
                 instance = clazz.newInstance();
-                this.singletonObjects.put(className,instance);
-                this.singletonObjects.put(gpBeanDefinition.getFactoryBeanName(),instance);
+
+                ZAdvisedSupport config = instantionAopConfig(gpBeanDefinition);
+                config.setTargetClass(clazz);
+                config.setTarget(instance);
+
+                //符合PointCut的规则的话，闯将代理对象
+                if(config.pointCutMatch()) {
+                    //创建代理类
+                    instance = createProxy(config).getProxy();
+                }
+
+                this.factoryBeanObjectCache.put(className,instance);
+                this.factoryBeanObjectCache.put(gpBeanDefinition.getFactoryBeanName(),instance);
             }
         }catch (Exception e){
             e.printStackTrace();
@@ -189,6 +205,27 @@ public class ZApplicationContext extends ZDefaultListableBeanFactory implements 
 
         return instance;
     }
+
+    private ZAopProxy createProxy(ZAdvisedSupport config) {
+
+        Class targetClass = config.getTargetClass();
+        if(targetClass.getInterfaces().length > 0){
+            return new ZJdkDynamicAopProxy(config);
+        }
+        return new ZCglibAopProxy(config);
+    }
+
+    private ZAdvisedSupport instantionAopConfig(ZBeanDefinition gpBeanDefinition) {
+        ZAopConfig config = new ZAopConfig();
+        config.setPointCut(this.reader.getConfig().getProperty("pointCut"));
+        config.setAspectClass(this.reader.getConfig().getProperty("aspectClass"));
+        config.setAspectBefore(this.reader.getConfig().getProperty("aspectBefore"));
+        config.setAspectAfter(this.reader.getConfig().getProperty("aspectAfter"));
+        config.setAspectAfterThrow(this.reader.getConfig().getProperty("aspectAfterThrow"));
+        config.setAspectAfterThrowingName(this.reader.getConfig().getProperty("aspectAfterThrowingName"));
+        return new ZAdvisedSupport(config);
+    }
+
     public Set<String> getBeanDefinitionNames(){
         return beanDefinitionMap.keySet();
     }
