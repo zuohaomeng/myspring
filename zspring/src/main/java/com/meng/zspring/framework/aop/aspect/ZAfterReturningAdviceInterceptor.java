@@ -20,6 +20,7 @@ public class ZAfterReturningAdviceInterceptor  extends ZAbstractAspectAdvice imp
 
     @Override
     public Object invoke(ZMethodInvocation mi) throws Throwable {
+        //调用链路使用
         Object retVal = mi.proceed();
         this.joinPoint = mi;
         this.afterReturning(retVal,mi.getMethod(),mi.getArguments(),mi.getThis());

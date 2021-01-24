@@ -9,6 +9,7 @@ import java.util.Map;
 
 /**
  * JDKInvocation代理类
+ * 代表一个方法的所有通知，然后进行链路调用
  * @author ZuoHao
  * @date 2021/1/24
  */
@@ -27,6 +28,15 @@ public class ZMethodInvocation implements ZJoinPoint {
      */
     private int currentInterceptorIndex = -1;
 
+    /**
+     *
+     * @param proxy 代理类
+     * @param target 目标类
+     * @param method 代理方法
+     * @param arguments 参数
+     * @param targetClass 目标类类型
+     * @param interceptorsAndDynamicMethodMatchers   通知调用链
+     */
     public ZMethodInvocation(
             Object proxy, Object target, Method method, Object[] arguments,
             Class<?> targetClass, List<Object> interceptorsAndDynamicMethodMatchers) {
@@ -73,6 +83,13 @@ public class ZMethodInvocation implements ZJoinPoint {
         return this.method;
     }
 
+    /**
+     * 设置属性，在同一个方法前后使用
+     * 如：在Before中设置，在AfterReturn中使用
+     * 实现参数的传递，与业务逻辑解耦
+     * @param key
+     * @param value
+     */
     @Override
     public void setUserAttribute(String key, Object value) {
         if (value != null) {
