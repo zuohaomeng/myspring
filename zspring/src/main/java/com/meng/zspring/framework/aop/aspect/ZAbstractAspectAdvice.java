@@ -9,7 +9,7 @@ import java.lang.reflect.Method;
  */
 public class ZAbstractAspectAdvice implements ZAdvice {
     /**
-     * 代理方法
+     * 代理方法，如Before，after等切面方法
      */
     private Method aspectMethod;
     /**
