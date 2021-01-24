@@ -14,7 +14,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
- * 通知生成类
+ * 加载AOP代理配置
  * @author ZuoHao
  * @date 2021/1/24
  */
